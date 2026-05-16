@@ -1,22 +1,37 @@
-# Communication Protocol
+# Agents Communication Protocol
 
-- Purpose: approved team messaging style and tokens.
-- Use only for chat rules and shorthand.
-- All docs outside `/specs` use this compact style.
+> The **unambiguous grammar** for coordinating AI agents and human developers.
 
-## Folders
-- `user_requests/` = user request intake and user-team chat
-- `user_specs/` = user-facing product specs
-- `msgs/` = live team chat only
-- `workflow/` = process rules and handoff steps
-- `communication_protocol/` = approved shorthand and format
-- `tasks/` = actual work items and status
-- `decisions/` = formal decisions and reasons
-- `archive/` = closed or old threads/docs
-- `glossary/` = terms, acronyms, team shorthand
+This repository is **Protocol-as-Code**. It provides a structured language and workflow system that reduces AI hallucinations, saves tokens, and ensures 100% traceability in multi-agent environments.
+
+---
+
+## 🛠️ How a Developer Uses This
+
+### 1. As a "System Prompt"
+You don't "run" this code. You **inject** these rules into your AI agents.
+**Prompt Shortcut:**
+> "Follow the protocol rules in `protocol/` and `workflow/` to coordinate all tasks. Use the `Op-Urgency` syntax for all internal messages."
+
+### 2. As a Submodule
+Add this repo to your project workspace to ensure your AI agents have a local reference to their "Operating Instructions."
+
+---
+
+## 📁 Repository Structure
+
+- **`protocol/`**: The language specification (shorthand, tokens, and format).
+- **`workflow/`**: The handoff rules. How a task moves from "Intake" to "Archive."
+- **`glossary/`**: Synonyms and shorthand to keep context windows small.
+- **`msg-thread-template.md`**: The boilerplate for starting new team discussions.
+
+## 📝 Core Rules Summary
+- **No redundancy:** Avoid filler words. Use compact style.
+- **Traceability:** Use `@role` and `ACK` for every handoff.
+- **Compactness:** If a doc grows, link it. Don't bloat the chat.
 
 ## Notes
-- Use `[[format]]`, `[[acronyms]]`, `[[common-phrases]]`, `[[../msgs/README]]`, `[[../glossary/README]]`, `[[../init/README]]`.
+- Use `[[format]]`, `[[acronyms]]`, `[[common-phrases]]`., `[[../msgs/README]]`, `[[../glossary/README]]`, `[[../init/README]]`.
 - Keep lines short.
 - Use `Q?` for questions, `ACK` for receipt.
 - If a doc grows beyond 2 lines, link it, do not expand chat.

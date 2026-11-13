@@ -55,6 +55,22 @@ inst && fail "install accepted junk entries"; [ ! -e "$C/cop" ] || fail "partial
 uninst && fail "uninstall accepted junk entries"; grep -q Traceback "$T/out" && fail "traceback on junk entries"
 cmp -s "$C/settings.json" "$T/junk.orig" || fail "settings changed"
 
+# a hook under another matcher does not count as registered for Agent|Task
+reset; echo '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"python3 ~/.claude/cop/peer_hook.py"}]}]}}' > "$C/settings.json"
+inst; python3 -c "
+import json
+pre=json.load(open('$C/settings.json'))['hooks']['PreToolUse']
+assert any(e['matcher']=='Agent|Task' for e in pre), pre" || fail "no Agent|Task entry added"
+
+# symlinked settings.json and CLAUDE.md stay symlinks; the real files are updated
+reset; mkdir -p "$T/dot"; echo '{"model":"x"}' > "$T/dot/settings.json"; echo mine > "$T/dot/CLAUDE.md"
+ln -s "$T/dot/settings.json" "$C/settings.json"; ln -s "$T/dot/CLAUDE.md" "$C/CLAUDE.md"
+inst; [ -L "$C/settings.json" ] && [ -L "$C/CLAUDE.md" ] || fail "install replaced a symlink"
+grep -q peer_hook "$T/dot/settings.json" && grep -q "COP:begin" "$T/dot/CLAUDE.md" || fail "real files not updated"
+uninst; [ -L "$C/settings.json" ] && [ -L "$C/CLAUDE.md" ] || fail "uninstall replaced a symlink"
+grep -q peer_hook "$T/dot/settings.json" && fail "hook left in real settings"; [ "$(cat "$T/dot/CLAUDE.md")" = mine ] || fail "CLAUDE.md not restored"
+ls "$T/dot"/.cop-* >/dev/null 2>&1 && fail "temp file left behind"
+
 # installed hook command exits 0 even when the script is gone
 reset; inst; rm "$C/cop/peer_hook.py"
 CMD=$(python3 -c "import json;print(json.load(open('$C/settings.json'))['hooks']['PreToolUse'][0]['hooks'][0]['command'])")

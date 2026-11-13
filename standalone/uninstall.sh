@@ -7,7 +7,20 @@ MARK=".cop-managed"
 
 # settings first: files are removed only after no hook points at them
 python3 - "$C/CLAUDE.md" "$C/settings.json" <<'PY'
-import json, os, re, sys
+import json, os, re, shutil, sys
+import tempfile
+def write_atomic(path, text):
+    real = os.path.realpath(path)  # follow symlinks so the link itself is preserved
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(real), prefix=".cop-")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="") as f:
+            f.write(text)
+        if os.path.exists(real):
+            shutil.copymode(real, tmp)
+        os.replace(tmp, real)
+    except BaseException:
+        os.unlink(tmp)
+        raise
 md, st = sys.argv[1:3]
 if os.path.exists(st):
     raw = open(st, encoding="utf-8", newline="").read()
@@ -37,8 +50,7 @@ if os.path.exists(st):
                 s["hooks"].pop("PreToolUse")
                 if not s["hooks"]:
                     s.pop("hooks")
-            with open(st, "w", encoding="utf-8") as f:
-                f.write(json.dumps(s, indent=2, ensure_ascii=False) + ("\n" if raw.endswith("\n") or not raw else ""))
+            write_atomic(st, json.dumps(s, indent=2, ensure_ascii=False) + ("\n" if raw.endswith("\n") or not raw else ""))
             print("removed hook from", st)
     if ".claude/cop/peer_hook.py" in open(st, encoding="utf-8").read():
         sys.exit("error: a hook still references .claude/cop/peer_hook.py in " + st + "; remove it by hand, nothing deleted")
@@ -48,8 +60,7 @@ if os.path.exists(md):
     if n == t:
         n = re.sub(r"^<!-- COP:begin -->\r?\n.*?\n<!-- COP:end -->\r?\n?", "", t, flags=re.S)
     if n != t:
-        with open(md, "w", encoding="utf-8", newline="") as f:
-            f.write(n)
+        write_atomic(md, n)
         print("removed COP block from", md)
 PY
 for d in "$C/cop" "$C/skills/cop"; do

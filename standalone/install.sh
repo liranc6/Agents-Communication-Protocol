@@ -62,20 +62,33 @@ fi
 # 3) subagent hook
 python3 - "$C/settings.json" "$HOOKCMD" "$TS" <<'PY'
 import json, os, shutil, sys
+import tempfile
+def write_atomic(path, text):
+    real = os.path.realpath(path)  # follow symlinks so the link itself is preserved
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(real), prefix=".cop-")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="") as f:
+            f.write(text)
+        if os.path.exists(real):
+            shutil.copymode(real, tmp)
+        os.replace(tmp, real)
+    except BaseException:
+        os.unlink(tmp)
+        raise
 p, cmd, ts = sys.argv[1:4]
 raw = open(p, encoding="utf-8", newline="").read() if os.path.exists(p) else ""
 s = json.loads(raw) if raw.strip() else {}
 h = s.get("hooks") or {}
 pre = h.get("PreToolUse") or []
-if any(".claude/cop/peer_hook.py" in x.get("command", "") for e in pre for x in e.get("hooks", [])):
+if any("Agent" in str(e.get("matcher", "")) and ".claude/cop/peer_hook.py" in x.get("command", "")
+       for e in pre for x in e.get("hooks", [])):
     print("hook already registered"); sys.exit(0)
 if raw:
     shutil.copy(p, f"{p}.bak-cop-{ts}")
 pre.append({"matcher": "Agent|Task", "hooks": [{"type": "command", "command": cmd}]})
 h["PreToolUse"] = pre
 s["hooks"] = h
-with open(p, "w", encoding="utf-8") as f:
-    f.write(json.dumps(s, indent=2, ensure_ascii=False) + "\n")
+write_atomic(p, json.dumps(s, indent=2, ensure_ascii=False) + "\n")
 print("hook registered in", p)
 PY
 echo "Done. Restart your agent session, then try: /cop"

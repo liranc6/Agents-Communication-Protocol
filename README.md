@@ -79,6 +79,7 @@ COP is text, so any agent can use it:
 3. Keep `skills/cop/reference/COP.md` where the agent can read it.
 
 ## Measure (Claude Code only)
+    # run from your clone of this repo (the plugin does not put the script on your PATH)
     python3 tools/cop_stats.py --main
     python3 tools/cop_stats.py --main --split "2026-11-01 00:00"   # before/after averages, UTC
 

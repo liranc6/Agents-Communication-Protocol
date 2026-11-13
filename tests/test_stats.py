@@ -31,6 +31,33 @@ class StatsTests(unittest.TestCase):
             self.assertIn("out=100", r.stdout)
             self.assertIn("out=50", r.stdout)
 
+    def test_average_is_request_weighted(self):
+        with tempfile.TemporaryDirectory() as d:
+            write_session(d, "small.jsonl", "2026-03-01T10:00:00Z", 3, 10)    # 30 out over 3 requests
+            write_session(d, "big.jsonl", "2026-03-02T10:00:00Z", 30, 100)    # 3000 out over 30 requests
+            r = self.run_stats(d, "--split", "2026-01-01")
+            self.assertIn("out=92 ", r.stdout)  # 3030 / 33, not the mean of 10 and 100 (55)
+
+    def test_project_filter_is_literal(self):
+        with tempfile.TemporaryDirectory() as d:
+            os.makedirs(os.path.join(d, "proj[1]"))
+            with open(os.path.join(d, "proj[1]", "a.jsonl"), "w") as f:
+                for i in range(3):
+                    f.write(json.dumps({"type": "assistant", "timestamp": "2026-01-01T10:00:00Z", "requestId": str(i),
+                                        "message": {"content": [], "usage": {"output_tokens": 5}}}) + "\n")
+            r = self.run_stats(d, "-p", "proj[1]")
+            self.assertEqual(len([l for l in r.stdout.splitlines() if l.startswith("2026-")]), 1, r.stdout)
+
+    def test_subagent_transcripts_detected(self):
+        with tempfile.TemporaryDirectory() as d:
+            os.makedirs(os.path.join(d, "projA", "sess", "subagents"))
+            with open(os.path.join(d, "projA", "sess", "subagents", "x.jsonl"), "w") as f:
+                for i in range(3):
+                    f.write(json.dumps({"type": "assistant", "timestamp": "2026-01-01T10:00:00Z", "requestId": str(i),
+                                        "message": {"content": [], "usage": {"output_tokens": 5}}}) + "\n")
+            self.assertIn(" sub ", self.run_stats(d).stdout)
+            self.assertNotIn("2026-", self.run_stats(d, "--main").stdout)
+
     def test_empty_dir(self):
         with tempfile.TemporaryDirectory() as d:
             self.assertEqual(self.run_stats(d, "--split", "2026-01-01").returncode, 0)

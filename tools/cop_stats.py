@@ -36,7 +36,7 @@ def num(v):
 
 
 def parse(path):
-    s = dict(path=path, kind="sub" if "/subagents/" in path else "main", start=None, reqs=0, out=0, think=0, ctx=0,
+    s = dict(path=path, kind="sub" if (os.sep + "subagents" + os.sep) in os.path.normpath(path) else "main", start=None, reqs=0, out=0, think=0, ctx=0,
              tool_chars=0, bad_lines=0)
     seen, tool_names, per_tool = set(), {}, Counter()
     with open(path, errors="ignore") as f:
@@ -93,7 +93,8 @@ def summary(label, ss):
     if not ss:
         print(f"{label}: no sessions")
         return
-    avg = lambda k: statistics.mean(x[k] / max(x["reqs"], 1) for x in ss)
+    total = max(sum(x["reqs"] for x in ss), 1)
+    avg = lambda k: sum(x[k] for x in ss) / total  # request-weighted: sum / sum of requests
     print(f"{label:6} n={len(ss):3}  per request: out={avg('out'):.0f} think={avg('think'):.0f} "
           f"visible={avg('visible'):.0f} tool_tok={avg('tool_tok'):.0f} ctx={avg('ctx'):.0f}")
 
@@ -113,7 +114,7 @@ def main():
     ap.add_argument("--main", action="store_true", help="exclude subagent transcripts")
     a = ap.parse_args()
 
-    files = set(glob.glob(f"{ROOT}/*{a.project}*/**/*.jsonl", recursive=True))
+    files = set(glob.glob(f"{glob.escape(ROOT)}/*{glob.escape(a.project)}*/**/*.jsonl", recursive=True))
     parsed, skipped = [], 0
     for f in sorted(files):
         try:

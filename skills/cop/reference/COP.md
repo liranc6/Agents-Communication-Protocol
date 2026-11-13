@@ -55,7 +55,7 @@ Principle: compression scales w/ shared context; cost unit = tokens. Unlisted ca
 - macOS/BSD sed: `\b` fails in default BRE -> use `-E` + explicit `[^a-zA-Z]` boundary classes. After bulk replace check substring collisions (mechanism->mech must not hit "mechanical").
 
 ## Measure
-`python3 tools/cop_stats.py --main [--split "YYYY-MM-DD HH:MM"]` (standalone: ~/.claude/cop/cop_stats.py; UTC). Rule not paying its load -> cut.
+`python3 tools/cop_stats.py --main [--split "YYYY-MM-DD HH:MM"]` (run from a clone of the repo; standalone install: ~/.claude/cop/cop_stats.py; UTC). Rule not paying its load -> cut.
 
 ## Roles and handoffs (optional)
 - Role prefix `ROLE: STATUS|...` only when >=3 parties share a thread. Role names are project-defined; COP fixes none.

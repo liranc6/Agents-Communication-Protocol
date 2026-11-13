@@ -1,0 +1,8 @@
+{
+  "name": "cop",
+  "version": "2.0.0",
+  "description": "COP: compressed communication protocol. Terse text where only machines or agents read it (any model), normal prose for humans.",
+  "author": { "name": "liranc6" },
+  "repository": "https://github.com/liranc6/Agents-Communication-Protocol",
+  "keywords": ["tokens", "subagents", "compression", "skill", "hook"]
+}

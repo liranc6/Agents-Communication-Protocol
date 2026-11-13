@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- `standalone/check.sh`: read-only post-install check (files, CLAUDE.md block, hook entry, live hook run).
+- `standalone/build-skill-zip.sh`: builds `dist/cop.zip` for upload as a claude.ai skill.
+- README: "Where it applies" table, terminal-first quick start, "Verify the install", and "Chat apps and cloud sessions".
+
+### Changed
+- README no longer sends users to Settings > General > Profile (the custom instructions box is under Settings > Your Claude).
+- `install.sh` ends by pointing to `check.sh` and says a new session is needed.
+
 ## 2.0.0
 
 COP replaces v1's role-based "Op-Urgency" syntax. v1 is not kept in the tree; use git history (tag or commit `b4d75bd`) if you need it.

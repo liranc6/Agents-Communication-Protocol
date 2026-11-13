@@ -9,22 +9,39 @@ The rules themselves are plain text and model-agnostic. This repo also ships a C
 hook, installer); other agents use the rules directly, see "Other agents" below. Release history is in
 [CHANGELOG.md](CHANGELOG.md).
 
-## Quick start: let your agent install it
-Download or clone this repo, then give your agent this prompt (replace `<REPO_PATH>` with the folder):
+## Where it applies
+COP works only where the agent reads your files. Check this before you install:
+
+| Where you use Claude | Always-on rules | `/cop` | Subagent hook | Stats |
+|----------------------|-----------------|--------|---------------|-------|
+| Claude Code on your computer (terminal, or a local session in the desktop app) | yes | yes | yes | yes |
+| claude.ai chat, desktop-app chat, cloud or remote sessions | only if you paste them into custom instructions or upload the skill | only as an uploaded skill | no | no |
+| Other agents | paste the rules yourself | no | paste `hooks/peer.txt` yourself | no |
+
+Chat and cloud sessions run on Anthropic's servers and never read `~/.claude`, so the install below does not affect them. See "Chat apps and cloud sessions".
+
+## Quick start
+In a terminal (macOS or Linux; needs bash and python3):
+
+    git clone https://github.com/liranc6/Agents-Communication-Protocol.git
+    cd Agents-Communication-Protocol
+    ./standalone/install.sh
+    ./standalone/check.sh
+
+Then open a new local Claude Code session and type `/cop`. A session that was already open during the install does not list it. If something fails, see "Verify the install".
+
+### Let an agent install it instead
+This only works for an agent that runs on your computer and can write to `~/.claude` (for example local Claude Code). Sandboxed agents, including chat and cloud sessions in the Claude desktop app, cannot reach your `~/.claude`; run the commands above yourself. Give your agent this prompt (replace `<REPO_PATH>` with the folder):
 
 ```text
 Install COP from <REPO_PATH> so you follow it in every future session.
 1. Read standalone/COP-rules.md and skills/cop/SKILL.md there.
 2. Persist it with the most durable mechanism you have:
-   - Claude Code: run standalone/install.sh.
+   - Claude Code: run standalone/install.sh, then standalone/check.sh.
    - Anything else: copy skills/cop/reference/COP.md and hooks/peer.txt to a permanent folder (not a temp dir), then add COP-rules.md plus one line with those two absolute paths to your global always-on instructions (custom instructions, AGENTS.md, rules file, system prompt). If a size limit stops you, use SKILL.md instead, or install skills/cop as a skill where supported.
    - Cannot write to any of these (for example a chat app): tell me exactly what to paste where.
 3. Back up files before editing, do not duplicate if already installed, then tell me what you changed and where, and whether I must restart you.
 ```
-
-The agent needs to read local files. In a chat app without file access, paste `standalone/COP-rules.md` into your
-custom instructions yourself (for Claude.ai: Settings > General > Profile). Chat replies are for humans, so COP
-changes little in a plain chat app; it matters most for agents that use tools, subagents and files.
 
 ## What you get
 - `skills/cop/reference/COP.md`: the full rules, usable by any agent.
@@ -50,9 +67,23 @@ Copies the skill, hook and stats script into `~/.claude`, appends the always-on 
 between `<!-- COP:begin -->` and `<!-- COP:end -->` markers, and registers the hook in `~/.claude/settings.json`.
 It is safe to re-run. Each change to `CLAUDE.md` or `settings.json` gets a timestamped `*.bak-cop-*` backup. It refuses to run
 if `~/.claude/cop` or `~/.claude/skills/cop` exists and was not installed by COP, and it validates `settings.json` before
-changing anything. Needs bash and python3 (macOS or Linux; on Windows use WSL) and the default `~/.claude` config folder (`CLAUDE_CONFIG_DIR` is not supported). Uninstall rewrites `settings.json` as 2-space JSON, so the file may be reformatted even though its content is unchanged. Restart your agent afterwards.
+changing anything. Needs bash and python3 (macOS or Linux; on Windows use WSL) and the default `~/.claude` config folder (`CLAUDE_CONFIG_DIR` is not supported). Uninstall rewrites `settings.json` as 2-space JSON, so the file may be reformatted even though its content is unchanged. Open a new session afterwards; one that was open during the install will not list `/cop`.
 
 Do not combine A and B: you would get the hook twice.
+
+## Verify the install
+    ./standalone/check.sh
+
+For the standalone install (a plugin install has nothing in `~/.claude` to check). It prints PASS or FAIL for each piece: the files in `~/.claude`, the single COP block in `CLAUDE.md`, the single hook entry in `settings.json`, and a live run of the hook. It changes nothing and exits 1 if anything failed.
+
+Then, in a new local Claude Code session:
+1. Type `/cop`. If it is unknown, you are probably in a chat or cloud session, or in a session that was open during the install.
+2. Ask the agent to start a subagent. The prompt it sends should end with the COP reply block from `hooks/peer.txt`.
+
+## Chat apps and cloud sessions
+These cannot read `~/.claude`, and COP changes little in them: replies to you stay normal prose either way. If you still want it, there are two ways. Menu names may change; look for "custom instructions" and "skills" in Settings.
+- **Custom instructions** (Settings > Your Claude > Instructions): paste `standalone/COP-rules.md`. If the box rejects it as too long, paste `skills/cop/SKILL.md` without its frontmatter. It costs tokens in every chat.
+- **Uploaded skill** (Settings > Customize > Skills): run `./standalone/build-skill-zip.sh`, upload `dist/cop.zip`, and put one line in custom instructions, such as `At the start of every conversation, load the "cop" skill and follow it.` Cheaper, but the skill is loaded less reliably.
 
 ### Subagent hook opt-out
 The hook appends a reply-format block to subagent prompts. Subagents that must return a fixed format (for example
@@ -94,7 +125,7 @@ Standalone: `./standalone/uninstall.sh` removes the COP block from `CLAUDE.md`, 
     .claude-plugin/plugin.json   plugin manifest
     skills/cop/                  SKILL.md and reference/COP.md
     hooks/                       hooks.json, peer_hook.py, peer.txt
-    standalone/                  install.sh, uninstall.sh, COP-rules.md
+    standalone/                  install.sh, uninstall.sh, check.sh, build-skill-zip.sh, COP-rules.md
     tools/cop_stats.py           token stats
     tests/                       unit and install tests
     .github/workflows/test.yml   CI

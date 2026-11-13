@@ -9,16 +9,14 @@ The rules themselves are plain text and model-agnostic. This repo also ships a C
 hook, installer); other agents use the rules directly, see "Other agents" below. Release history is in
 [CHANGELOG.md](CHANGELOG.md).
 
-## Where it applies
-COP works only where the agent reads your files. Check this before you install:
+## Where it works
+`install.sh` only changes files in `~/.claude` on your computer. Only agents that read those files see it.
 
-| Where you use Claude | Always-on rules | `/cop` | Subagent hook | Stats |
-|----------------------|-----------------|--------|---------------|-------|
-| Claude Code on your computer (terminal, or a local session in the desktop app) | yes | yes | yes | yes |
-| claude.ai chat, desktop-app chat, cloud or remote sessions | only if you paste them into custom instructions or upload the skill | only as an uploaded skill | no | no |
-| Other agents | paste the rules yourself | no | paste `hooks/peer.txt` yourself | no |
-
-Chat and cloud sessions run on Anthropic's servers and never read `~/.claude`, so the install below does not affect them. See "Chat apps and cloud sessions".
+| Where you use Claude | Right after `install.sh` | After the extra setup for that place |
+|----------------------|--------------------------|--------------------------------------|
+| Claude Code on your computer (terminal, or a local session in the desktop app) | Works: always-on rules, `/cop`, subagent hook, stats. Open a new session first. | Nothing more to do. |
+| claude.ai chat, desktop-app chat, cloud or remote sessions | Does NOT work. These run on Anthropic's servers and never read `~/.claude`. | Works for the rules only, through custom instructions or an uploaded skill (see "Chat apps and cloud sessions"). No hook and no stats there. |
+| Other agents | Does NOT work. | Works after you add the rules to the agent's instructions (see "Other agents"). |
 
 ## Quick start
 In a terminal (macOS or Linux; needs bash and python3):
@@ -81,9 +79,27 @@ Then, in a new local Claude Code session:
 2. Ask the agent to start a subagent. The prompt it sends should end with the COP reply block from `hooks/peer.txt`.
 
 ## Chat apps and cloud sessions
-These cannot read `~/.claude`, and COP changes little in them: replies to you stay normal prose either way. If you still want it, there are two ways. Menu names may change; look for "custom instructions" and "skills" in Settings.
-- **Custom instructions** (Settings > Your Claude > Instructions): paste `standalone/COP-rules.md`. If the box rejects it as too long, paste `skills/cop/SKILL.md` without its frontmatter. It costs tokens in every chat.
-- **Uploaded skill** (Settings > Customize > Skills): run `./standalone/build-skill-zip.sh`, upload `dist/cop.zip`, and put one line in custom instructions, such as `At the start of every conversation, load the "cop" skill and follow it.` Cheaper, but the skill is loaded less reliably.
+These sessions cannot read `~/.claude`, so `install.sh` does nothing for them. COP also changes little there, because replies to you stay normal prose either way. If you still want the rules, pick one option. Menu names may change; look for "custom instructions" and "skills" in Settings.
+
+### Option 1: paste the rules (always on)
+1. Copy `standalone/COP-rules.md` (on a Mac: `pbcopy < standalone/COP-rules.md`).
+2. Paste it into Settings > Your Claude > Instructions and save.
+3. Start a new chat. Chats that were already open do not pick up the change.
+
+Why: custom instructions are sent with every chat, so the rules always apply. The cost is about 1.2K tokens in every chat. If the box rejects the text as too long, paste `skills/cop/SKILL.md` without its frontmatter instead.
+
+### Option 2: upload the skill and add one sentence (lighter, less reliable)
+1. Build the zip: `./standalone/build-skill-zip.sh` (writes `dist/cop.zip`).
+2. Upload it in Settings > Customize > Skills, and make sure it is switched on.
+3. Add this sentence to Settings > Your Claude > Instructions and save:
+
+       At the start of every conversation, load the "cop" skill and follow it.
+
+4. Start a new chat. Check that it loads the skill; you should see it in the tool calls.
+
+Why the sentence: a skill is loaded only when Claude judges it relevant to your request, usually from its description. COP is a standing style, not a task, so most requests never trigger it and the skill would sit unused. The sentence tells Claude to load it every time. It costs only a few tokens instead of the full rules, but Claude sometimes skips it, and a session that cannot use skills ignores it.
+
+Neither option adds the subagent hook or stats. Those exist only in local Claude Code.
 
 ### Subagent hook opt-out
 The hook appends a reply-format block to subagent prompts. Subagents that must return a fixed format (for example

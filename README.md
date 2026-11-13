@@ -12,11 +12,11 @@ hook, installer); other agents use the rules directly, see "Other agents" below.
 ## Where it works
 `install.sh` only changes files in `~/.claude` on your computer. Only agents that read those files see it.
 
-| Where you use Claude | Right after `install.sh` | After the extra setup for that place |
-|----------------------|--------------------------|--------------------------------------|
-| Claude Code on your computer (terminal, or a local session in the desktop app) | Works: always-on rules, `/cop`, subagent hook, stats. Open a new session first. | Nothing more to do. |
-| claude.ai chat, desktop-app chat, cloud or remote sessions | Does NOT work. These run on Anthropic's servers and never read `~/.claude`. | Works for the rules only, through custom instructions or an uploaded skill (see "Chat apps and cloud sessions"). No hook and no stats there. |
-| Other agents | Does NOT work. | Works after you add the rules to the agent's instructions (see "Other agents"). |
+| Where you use Claude | Works with nothing installed? | Setup | Works after setup |
+|----------------------|-------------------------------|-------|-------------------|
+| Claude Code on your computer (terminal, or a local session in the desktop app) | No | Run `./standalone/install.sh`, then open a new session | Yes: always-on rules, `/cop`, subagent hook, stats |
+| claude.ai chat, desktop-app chat, cloud or remote sessions | No. They run on Anthropic's servers and never read `~/.claude`, so `install.sh` does nothing for them. | Either paste `standalone/COP-rules.md` into Settings > Your Claude > Instructions, or upload `dist/cop.zip` as a skill and add one sentence to Instructions. Steps are in "Chat apps and cloud sessions". Then start a new chat. | Rules only. No `/cop` command, hook or stats. |
+| Other agents | No | Add `standalone/COP-rules.md` to the agent's instructions file and give subagents `hooks/peer.txt` (see "Other agents") | Rules, and the subagent block if you paste it |
 
 ## Quick start
 In a terminal (macOS or Linux; needs bash and python3):

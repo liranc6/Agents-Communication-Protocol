@@ -22,6 +22,16 @@ python3 -c "import json;s=json.load(open('$C/settings.json'));p=s['hooks']['PreT
 OUT=$(echo '{"tool_input":{"prompt":"hi"}}' | python3 "$C/cop/peer_hook.py")
 echo "$OUT" | grep -q "COP:" || fail "installed hook"
 
+# check.sh passes on a good install
+bash "$ROOT/standalone/check.sh" >/dev/null || fail "check.sh failed after install"
+
+# skill zip has the skill at cop/ and no ownership marker
+bash "$ROOT/standalone/build-skill-zip.sh" "$T/cop.zip" >/dev/null
+python3 -c "
+import zipfile
+n=zipfile.ZipFile('$T/cop.zip').namelist()
+assert 'cop/SKILL.md' in n and 'cop/reference/COP.md' in n and not any('.cop-managed' in x for x in n), n" || fail "skill zip"
+
 # idempotent, and first backup survives
 bash "$ROOT/standalone/install.sh" >/dev/null
 [ "$(grep -c 'COP:begin' "$C/CLAUDE.md")" = 1 ] || fail "duplicate block"
@@ -36,6 +46,7 @@ import json
 a=json.load(open('$C/settings.json')); b=json.load(open('$T/st.orig'))
 assert a==b, (a,b)" || fail "settings not restored"
 [ ! -e "$C/cop" ] && [ ! -e "$C/skills/cop" ] || fail "leftovers"
+! bash "$ROOT/standalone/check.sh" >/dev/null 2>&1 || fail "check.sh passed after uninstall"
 
 # fresh HOME with no files at all
 rm -rf "$C"; mkdir -p "$C"

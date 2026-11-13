@@ -91,4 +91,5 @@ s["hooks"] = h
 write_atomic(p, json.dumps(s, indent=2, ensure_ascii=False) + "\n")
 print("hook registered in", p)
 PY
-echo "Done. Restart your agent session, then try: /cop"
+echo "Done. Verify with: $HERE/check.sh"
+echo "Then open a NEW local Claude Code session and try: /cop"
